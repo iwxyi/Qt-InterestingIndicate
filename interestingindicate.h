@@ -32,7 +32,7 @@ public:
     /// 设置总数量
     void setTotalCount(int count);
 
-    /// 设置每两个项目之间的spacing
+    /// 设置每两个项目之间的spacing（不包括上下两边外面的）
     void setItemSpacing(int spacing);
 
     /// 设置索引（不用动画）
@@ -72,7 +72,7 @@ private:
     int line3 = 0;
 
 private:
-    int triangleSize = 8;
+    int triangleSize = 16;
     QColor lineColor = Qt::black;
     int totalCount = 0;
     int itemSpacing = 0;

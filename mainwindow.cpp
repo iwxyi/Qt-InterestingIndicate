@@ -16,6 +16,12 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
+void MainWindow::showEvent(QShowEvent *event)
+{
+    QMainWindow::showEvent(event);
+    ui->widget->setCurrentIndex(0);
+}
+
 
 void MainWindow::on_pushButton_clicked()
 {

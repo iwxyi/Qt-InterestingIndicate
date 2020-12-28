@@ -16,6 +16,7 @@ public:
     ~MainWindow();
 
 private slots:
+    void showEvent(QShowEvent* event);
     void on_pushButton_clicked();
 
 private:

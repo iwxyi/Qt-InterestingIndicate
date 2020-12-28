@@ -1,6 +1,7 @@
 #include <QPainter>
 #include <QPainterPath>
 #include <QPropertyAnimation>
+#include <QTimer>
 #include "interestingindicate.h"
 
 InterestingIndicate::InterestingIndicate(QWidget *parent) : QWidget(parent)
@@ -43,25 +44,36 @@ void InterestingIndicate::moveIndicate(int index)
 {
     this->currentIndex = index;
     int y = getCenterYByIndex(index);
+    const bool down = currentY > y;
+    const int distance = qAbs(currentY - y);
+    if (distance <= 0) // 不需要移动
+    {
+        // TODO: 来一个有意思的动画？
+        return ;
+    }
+    this->currentY = y;
 
-    const int baseTime = 250;
+    const int baseTime = 150 + 350 * distance / height();
     const int deltaTime = 100;
 
     // 开启随机动画
     QPropertyAnimation* ani = new QPropertyAnimation(this, "line1");
     ani->setStartValue(line1);
     ani->setEndValue(getLineTopByCenterY(y, TL_Left));
-    ani->setDuration(baseTime + qrand() % deltaTime);
+    ani->setDuration(baseTime);
+    ani->setEasingCurve(QEasingCurve::InOutCubic);
     ani->start();
     connect(ani, &QPropertyAnimation::valueChanged, this, [=]{
         update();
     });
     connect(ani, SIGNAL(finished()), ani, SLOT(deleteLater()));
 
+
     ani = new QPropertyAnimation(this, "line2");
     ani->setStartValue(line2);
     ani->setEndValue(getLineTopByCenterY(y, TL_TopRight));
-    ani->setDuration(baseTime + qrand() % deltaTime);
+    ani->setDuration(baseTime + deltaTime * (down ? 1 : 2));
+    ani->setEasingCurve(QEasingCurve::InOutCubic);
     ani->start();
     connect(ani, &QPropertyAnimation::valueChanged, this, [=]{
         update();
@@ -71,7 +83,8 @@ void InterestingIndicate::moveIndicate(int index)
     ani = new QPropertyAnimation(this, "line3");
     ani->setStartValue(line3);
     ani->setEndValue(getLineTopByCenterY(y, TL_BottomRight));
-    ani->setDuration(baseTime + qrand() % deltaTime);
+    ani->setDuration(baseTime + deltaTime * (down ? 2 : 1));
+    ani->setEasingCurve(QEasingCurve::InOutCubic);
     ani->start();
     connect(ani, &QPropertyAnimation::valueChanged, this, [=]{
         update();
@@ -98,6 +111,8 @@ void InterestingIndicate::paintEvent(QPaintEvent *)
 
 int InterestingIndicate::getCenterYByIndex(int index)
 {
+    if (totalCount == 0)
+        return 0;
     int everyHeight = (height() - itemSpacing * (totalCount - 1)) / totalCount;
     if (everyHeight <= 0) // 数据不正常
         return 0;
