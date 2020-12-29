@@ -1,12 +1,12 @@
 #include <QPainter>
 #include <QPainterPath>
 #include <QPropertyAnimation>
-#include <QTimer>
+#include <QDebug>
 #include "interestingindicate.h"
 
 InterestingIndicate::InterestingIndicate(QWidget *parent) : QWidget(parent)
 {
-    setTriangleSize(8);
+    setTriangleSize(16);
     srand(static_cast<unsigned int>(time(nullptr)));
 }
 
@@ -33,6 +33,11 @@ void InterestingIndicate::setTotalCount(int count)
     this->totalCount = count;
 }
 
+void InterestingIndicate::setItemSpacing(int spacing)
+{
+    this->itemSpacing = spacing;
+}
+
 void InterestingIndicate::setCurrentIndex(int index)
 {
     this->currentIndex = index;
@@ -57,6 +62,7 @@ void InterestingIndicate::moveIndicate(int index)
     const int deltaTime = 100;
 
     // 开启随机动画
+    aniPV = 3;
     QPropertyAnimation* ani = new QPropertyAnimation(this, "line1");
     ani->setStartValue(line1);
     ani->setEndValue(getLineTopByCenterY(y, TL_Left));
@@ -67,6 +73,10 @@ void InterestingIndicate::moveIndicate(int index)
         update();
     });
     connect(ani, SIGNAL(finished()), ani, SLOT(deleteLater()));
+    connect(ani, &QPropertyAnimation::finished, this, [=]{
+        aniPV--;
+        update();
+    });
 
 
     ani = new QPropertyAnimation(this, "line2");
@@ -79,6 +89,10 @@ void InterestingIndicate::moveIndicate(int index)
         update();
     });
     connect(ani, SIGNAL(finished()), ani, SLOT(deleteLater()));
+    connect(ani, &QPropertyAnimation::finished, this, [=]{
+        aniPV--;
+        update();
+    });
 
     ani = new QPropertyAnimation(this, "line3");
     ani->setStartValue(line3);
@@ -90,6 +104,10 @@ void InterestingIndicate::moveIndicate(int index)
         update();
     });
     connect(ani, SIGNAL(finished()), ani, SLOT(deleteLater()));
+    connect(ani, &QPropertyAnimation::finished, this, [=]{
+        aniPV--;
+        update();
+    });
 }
 
 int InterestingIndicate::currentIndicateIndex() const
@@ -103,21 +121,34 @@ void InterestingIndicate::paintEvent(QPaintEvent *)
     painter.setRenderHint(QPainter::Antialiasing, true);
     painter.setPen(QPen(lineColor, 1));
     const int border = 1;
+    double halfLine = 0.5;
 
-    painter.drawLine(border, line1, border, line1 + triangleSize);
-    painter.drawLine(border, line2, width()-border, line2 + triangleSize/2);
-    painter.drawLine(width()-border, line3, border, line3 + triangleSize/2);
+    if (!aniPV) // 线两端重合的点不好看，还是一口气画完吧！
+    {
+        QPainterPath path;
+        path.moveTo(border, line1);
+        path.lineTo(border, line1 + triangleSize);
+        path.lineTo(width()-border, line3);
+        path.lineTo(border, line2);
+        painter.drawPath(path);
+    }
+    else // 运动中，挨个画每一条线
+    {
+        painter.drawLine(QPointF(border, line1+halfLine), QPointF(border, line1 + triangleSize-halfLine));
+        painter.drawLine(QPointF(border, line2), QPointF(width()-border-halfLine, line2 + triangleSize/2-halfLine));
+        painter.drawLine(QPointF(width()-border-halfLine, line3+halfLine), QPointF(border, line3 + triangleSize/2));
+    }
 }
 
 int InterestingIndicate::getCenterYByIndex(int index)
 {
     if (totalCount == 0)
         return 0;
-    int everyHeight = (height() - itemSpacing * (totalCount - 1)) / totalCount;
+    double everyHeight = static_cast<double>(height() - itemSpacing * (totalCount - 1)) / totalCount;
     if (everyHeight <= 0) // 数据不正常
         return 0;
 
-    return everyHeight * index + itemSpacing * qMin(0, index-1) + everyHeight / 2;
+    return static_cast<int>((everyHeight + itemSpacing) * index + everyHeight / 2);
 }
 
 int InterestingIndicate::getLineTopByCenterY(int centerY, TriangleLIne line)

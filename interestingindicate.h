@@ -78,6 +78,7 @@ private:
     int itemSpacing = 0;
     int currentIndex = -1;
     int currentY = -1;
+    int aniPV = 0;
 };
 
 #endif // INTERESTINGINDICATE_H
